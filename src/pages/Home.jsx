@@ -2,12 +2,20 @@ import React, { useEffect } from 'react'
 import { useState } from 'react';
 import Card from '../components/Card';
 import axios from "axios";
+import { ToastContainer, toast } from 'react-toastify'; 
+import 'react-toastify/dist/ReactToastify.css'; 
+import VisCharts from '../components/VisCharts';
+
 const Home = () => {
     const [unit, setUnit] = useState('Celsius'); 
     const [searchTerm, setSearchTerm] = useState('Bengaluru'); 
     const [data,setData]=useState();
     const [forecastData,setForecastData]=useState();
     const [weeklyData,setWeeklyData]=useState([]);
+    const [threshold, setThreshold] = useState({ temperature: 35 }); 
+    const [alert, setAlert] = useState(false);
+
+
     const handleUnitChange = (event) => {
       setUnit(event.target.value); 
       console.log(`Selected unit: ${event.target.value}`);
@@ -83,17 +91,59 @@ const Home = () => {
         console.log(err);
       })
     }
+
+    const [tempThreshold, setTempThreshold] = useState(threshold.temperature); // New state for temporary threshold
+    const handleThresholdChange = (event) => {
+      setTempThreshold(event.target.value); // Update temporary threshold state
+    // const { name, value } = event.target;
+    // setThreshold((prevThreshold) => ({
+    //   ...prevThreshold,
+    //   [name]: value,
+    // }));
+  };
+  const handleThresholdSubmit=()=>{
+    setThreshold({ temperature: tempThreshold })
+    toast.success(`Set Alert for: ${tempThreshold}°C`, {
+      autoClose: true, 
+      closeOnClick: true,
+      draggable: true,
+    });
+  }
+
+  useEffect(() => {
+    if(data && data?.main?.temp> threshold.temperature)
+    {
+  setAlert(true);
+  toast.error(`Temperature Alert: ${data?.main?.temp}°C`, {
+    autoClose: false, 
+    closeOnClick: true,
+    draggable: true,
+  });
+    } else {
+      setAlert(false);
+    }
+  },[data,threshold]);
+
     useEffect(()=>{
       handleAPICalls('Celsius');
       // getWeatherData("metric");
       // getForecastData("metric");
+      const intervalId = setInterval(()=>{
+        handleAPICalls(unit)
+      }, 60000); // Every minute
+
+  return () => clearInterval(intervalId); // Cleanup on unmount
     },[]);
+
+    
+    
 
   return (
     <div className='text-white'>
+          <ToastContainer /> 
         <div className='container mx-auto my-5'>
         
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center my-6">
             <h1>Real time weather monitoring</h1>
             <form className="flex items-center max-w-xl " onSubmit={handleSubmit}>
       <label htmlFor="simple-search" className="sr-only">Search</label>
@@ -104,7 +154,7 @@ const Home = () => {
         <input
           type="text"
           id="simple-search"
-          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-96 ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
           placeholder="Entry city name.."
           value={searchTerm}
           onChange={handleInputChange}
@@ -121,21 +171,49 @@ const Home = () => {
         <span className="sr-only">Search</span>
       </button>
     </form>
-    <div>
+    <div >
            <select 
             value={unit} 
             onChange={handleUnitChange} 
-            className='border border-gray-300 rounded-md p-2 mb-4 bg-blue-400'
+            className='border border-gray-300 rounded-md px-4 py-2 bg-blue-400'
         >
             <option value="Celsius">Celsius</option>
             <option value="Fahrenheit">Fahrenheit</option>
             <option value="Kelvin">Kelvin</option>
         </select>
         </div>
+    <div >
+        <form className='flex gap-4 ' onSubmit={(e) => e.preventDefault()}>
+  <label>
+    Temperature Threshold (°C):
+  </label>
+    <input
+      type="number"
+      name="temperature"
+      value={tempThreshold.temperature}
+      onChange={handleThresholdChange}
+      className='rounded-lg bg-gray-500 text-white px-2 py-1 '
+    />
+     <button
+      type="button"
+      onClick={() => handleThresholdSubmit()}
+      className='rounded-lg bg-blue-500 text-white px-4 py-1 flex items-center'
+    >
+              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24">
+        <path d="M120 936v-240l480-120L120 456V216l720 360-720 360Z"/>
+      </svg>
+    </button>
+</form>
+    </div>
             </div>
 
         <Card city={searchTerm} weatherData={data} weeklyData={weeklyData} unit={unit} />
+
+        <VisCharts forecastData={forecastData} />
         </div>
+        <div>
+    {/* {alert && <p style={{ color: 'red' }}>Temperature Alert: {data?.main?.temp}°C</p>} */}
+  </div>
     </div>
   )
 }

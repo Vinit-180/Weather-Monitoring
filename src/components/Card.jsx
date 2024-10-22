@@ -20,7 +20,7 @@ const Card = ({city,weatherData,weeklyData,unit}) => {
       {/* Location and time */}
       <div className="text-left">
         <h2 className="text-xl font-bold">Forecast in <span className="text-yellow-400">{city}</span></h2>
-        <p>Last updated at: {weatherDetails?.dt}</p>
+        <p>Last updated at: {weatherDetails?.dt} </p>
       </div>
 
 
