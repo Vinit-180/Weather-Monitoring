@@ -12,18 +12,22 @@ const Home = () => {
     const [data,setData]=useState();
     const [forecastData,setForecastData]=useState();
     const [weeklyData,setWeeklyData]=useState([]);
-    const [threshold, setThreshold] = useState({ temperature: 35 }); 
+    const [threshold, setThreshold] = useState({ temperature: 1000 }); 
     const [alert, setAlert] = useState(false);
+    const [cityWeatherData, setCityWeatherData] = useState([]); 
+
 
 
     const handleUnitChange = (event) => {
       setUnit(event.target.value); 
       console.log(`Selected unit: ${event.target.value}`);
         handleAPICalls(event.target.value);
+        
     };
 
     const handleAPICalls=(unit)=>{
       console.log(unit);
+      setCityWeatherData([]); 
       if(unit==='Celsius'){
         getWeatherData("metric");
         getForecastData("metric");
@@ -37,6 +41,7 @@ const Home = () => {
         getForecastData("");
       }
     }
+    
 
     const handleInputChange = (event) => {
       setSearchTerm(event.target.value); 
@@ -58,15 +63,40 @@ const Home = () => {
 
     const getWeatherData=(tempUnit)=>{
       const apiKey="97a490f4c8ca0ea658ce5aa7a52651bd";
-      // tempUnit= unit==='Celcius' ? 'metric': unit==="Fahrenheit" ? "imperial" : "";
-      axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${searchTerm}&units=${tempUnit}&appid=${apiKey}`).then((data)=>{
+      
+        axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${searchTerm}&units=${tempUnit}&appid=${apiKey}`).then((data)=>{
         console.log(data);
         setData(data.data);
         
       }).catch((err)=>{
         console.log(err);
       })
-    }
+      const cities = ['Delhi', 'Mumbai','Bengaluru', 'Chennai', 'Kolkata', 'Hyderabad'];
+      setCityWeatherData([]); 
+      // Fetch weather data for each city
+    cities.forEach(city => {
+      getOtherCitiesData(tempUnit,city);
+  });
+
+}
+ 
+
+const getOtherCitiesData=(tempUnit,city)=>{
+  const apiKey="97a490f4c8ca0ea658ce5aa7a52651bd";
+  axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${tempUnit}&appid=${apiKey}`).then((data)=>{
+    console.log(data);
+    const weatherData = {
+      city: city, // Set the city name
+      data: data.data // Set the weather data
+  };
+    setCityWeatherData(prevData => [...prevData, weatherData]); // Append city data
+    console.log(cityWeatherData);
+  }).catch((err)=>{
+    console.log(err);
+  })
+}
+
+    
     const getForecastData=(tempUnit)=>{
       const apiKey="1a85139654542ba15f9cb458cd6b9166";
       // axios.get(`https://api.openweathermap.org/data/2.5/onecall?lat=${cord?.lat}&lon=${cord?.lon}&exclude=minutely,hourly&appid=${apiKey}&units=metric`).then((data)=>{
@@ -95,15 +125,12 @@ const Home = () => {
     const [tempThreshold, setTempThreshold] = useState(threshold.temperature); // New state for temporary threshold
     const handleThresholdChange = (event) => {
       setTempThreshold(event.target.value); // Update temporary threshold state
-    // const { name, value } = event.target;
-    // setThreshold((prevThreshold) => ({
-    //   ...prevThreshold,
-    //   [name]: value,
-    // }));
+
   };
   const handleThresholdSubmit=()=>{
+      
     setThreshold({ temperature: tempThreshold })
-    toast.success(`Set Alert for: ${tempThreshold}°C`, {
+    toast.success(`Set Alert for: ${tempThreshold}°${unit[0]}`, {
       autoClose: true, 
       closeOnClick: true,
       draggable: true,
@@ -114,7 +141,7 @@ const Home = () => {
     if(data && data?.main?.temp> threshold.temperature)
     {
   setAlert(true);
-  toast.error(`Temperature Alert: ${data?.main?.temp}°C`, {
+  toast.error(`Temperature Alert: ${data?.main?.temp}°${unit[0]}`, {
     autoClose: false, 
     closeOnClick: true,
     draggable: true,
@@ -125,12 +152,11 @@ const Home = () => {
   },[data,threshold]);
 
     useEffect(()=>{
+      setCityWeatherData([]);
       handleAPICalls('Celsius');
-      // getWeatherData("metric");
-      // getForecastData("metric");
       const intervalId = setInterval(()=>{
         handleAPICalls(unit)
-      }, 60000); // Every minute
+      }, 300000); // Every 5 minute
 
   return () => clearInterval(intervalId); // Cleanup on unmount
     },[]);
@@ -185,13 +211,14 @@ const Home = () => {
     <div >
         <form className='flex gap-4 ' onSubmit={(e) => e.preventDefault()}>
   <label>
-    Temperature Threshold (°C):
+    Temperature Threshold (°{unit[0]}):
   </label>
     <input
       type="number"
       name="temperature"
       value={tempThreshold.temperature}
       onChange={handleThresholdChange}
+      placeholder={`Enter threshold (in °${unit[0]})`}
       className='rounded-lg bg-gray-500 text-white px-2 py-1 '
     />
      <button
@@ -207,7 +234,9 @@ const Home = () => {
     </div>
             </div>
 
-        <Card city={searchTerm} weatherData={data} weeklyData={weeklyData} unit={unit} />
+        <Card city={searchTerm} weatherData={data} weeklyData={weeklyData} unit={unit} 
+        cityWeatherData={cityWeatherData}
+        />
 
         <VisCharts forecastData={forecastData} />
         </div>

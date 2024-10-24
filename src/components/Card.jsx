@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import dayLandscape from "../assets/day-landscape.png"
 import nightLandscape from "../assets/night-landscape.png"
-const Card = ({city,weatherData,weeklyData,unit}) => {
+const Card = ({city,weatherData,weeklyData,unit,cityWeatherData}) => {
   const [weatherDetails,setWeatherDetails]=useState();
   const [sunrise, setSunrise] = useState('');
   const [sunset, setSunset] = useState('')
@@ -13,17 +13,16 @@ const Card = ({city,weatherData,weeklyData,unit}) => {
   
   setSunrise(`${sunriseTime.getHours()}:${sunriseTime.getMinutes() < 10 ? '0' : ''}${sunriseTime.getMinutes()}`);
   setSunset(`${sunsetTime.getHours()}:${sunsetTime.getMinutes() < 10 ? '0' : ''}${sunsetTime.getMinutes()}`);
+  console.log(cityWeatherData);
   },[weatherData]);
   return (
-    <div>
-      <div className="flex flex-col  justify-center p-6 bg-gray-800 text-white rounded-lg w-full max-w-5xl">
+    <div className='flex gap-4'>
+      <div className="flex flex-col  justify-center p-6 bg-gray-800 text-white rounded-lg w-full max-w-6xl">
       {/* Location and time */}
       <div className="text-left">
         <h2 className="text-xl font-bold">Forecast in <span className="text-yellow-400">{city}</span></h2>
         <p>Last updated at: {weatherDetails?.dt} </p>
       </div>
-
-
       <div className="flex gap-10 mt-6">
         {/* Current weather */}
         <div className="flex flex-col py-4 px-6 w-[50%] h-100 rounded-lg"
@@ -91,10 +90,7 @@ const Card = ({city,weatherData,weeklyData,unit}) => {
         </div>
       </div>
       </div>
-
-
       {/* Weekly forecast */}
-
         <div className='my-4 px-6 py-4 rounded-lg'style={{backgroundColor:"#242230"}}>
         <h1 className='text-2xl font-semibold'>
           Weekly Forecast
@@ -132,6 +128,24 @@ const Card = ({city,weatherData,weeklyData,unit}) => {
       </div>
         </div>
     </div>
+    <div className='max-w-sm'>
+        <h1 className='text-3xl text-center font-bold'>Forecase in other cities</h1>
+      <div className='flex flex-wrap gap-2'>
+      {cityWeatherData?.map((item, index) => {
+        console.log("______",item,item?.data?.weather[0]?.icon)
+        return (<div key={index} className="flex p-2 bg-gray-800 text-white rounded-lg w-full gap-3 justify-between max-w-sm items-center">
+          <h2 className="text-xl font-bold">{item.city}</h2>
+          {/* src={`https://openweathermap.org/img/wn/${item?.data?.weather[0]?.icon}.png`}  */}
+          <img
+          src={`http://openweathermap.org/img/wn/${item?.data?.weather[0]?.icon}.png`} alt="weather icon"
+
+            className='w-10 h-10' 
+          />
+          <p className="text-3xl font-bold">{item.data.main.temp} °{unit[0]}</p>
+        </div>)}
+      )}
+      </div>
+      </div>
     </div>
   )
 }
